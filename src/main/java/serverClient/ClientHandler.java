@@ -2,9 +2,9 @@ package serverClient;
 import java.io.*;
 import java.net.Socket;
 
-public class ClientHandiler implements Runnable {
+public class ClientHandler implements Runnable {
     private Socket socket;
-    public ClientHandiler(Socket socket){
+    public ClientHandler(Socket socket){
         this.socket=socket;
     }
     public void run(){

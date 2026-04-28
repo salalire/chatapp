@@ -1,6 +1,5 @@
 package serverClient;
 
-import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -13,9 +12,9 @@ public class Server {
             while (true) {
                 Socket socket = serverSocket.accept();
                 System.out.println("Client connected");
-                ClientHandiler clientHandiler=new ClientHandiler(socket);
+                ClientHandler clientHandiler=new ClientHandler(socket);
                 new Thread(clientHandiler).start();
-                socket.close();
+//                socket.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
