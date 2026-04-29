@@ -4,20 +4,33 @@ import java.net.Socket;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
+    private PrintWriter out;
     public ClientHandler(Socket socket){
         this.socket=socket;
     }
-    public void run(){
+
+
+    private void broadcast(String message){
+        for(ClientHandler client:Server.clients){
+            client.out.println(message);
+        }
+    }
+
+
+    public void run()
+
+    {
         try {
 
             BufferedReader in=new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out=new PrintWriter(socket.getOutputStream(),true);
+             out=new PrintWriter(socket.getOutputStream(),true);
             out.println("Welcome To Chat!");
             String message;
             while ((message=in.readLine())!=null){
                 System.out.println("Client says: "+message);
-                out.println("Your Messages"+message);
+                broadcast(message);
             }
+            Server.clients.remove(this);
             socket.close();
         }
         catch (Exception e){
