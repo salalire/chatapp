@@ -5,7 +5,7 @@ import serverClient.Client;
 public class ClientMain {
 
         public static void main(String[] args){
-            new Client().requestClient();
+            new Client().startClient();
         }
 
 
