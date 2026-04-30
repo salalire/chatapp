@@ -2,7 +2,6 @@ package serverClient;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class Client {
 
@@ -10,7 +9,20 @@ public class Client {
     private BufferedReader input;
     private PrintWriter output;
 
-    public void startClient() {
+    //  Listener for UI
+    private MessageListener listener;
+
+    //  Interface (callback)
+    public interface MessageListener {
+        void onMessageReceived(String message);
+    }
+
+    public void setMessageListener(MessageListener listener) {
+        this.listener = listener;
+    }
+
+    //  Start connection (NO console input anymore)
+    public void startClient(String username) {
         try {
             socket = new Socket("localhost", 5000);
 
@@ -20,43 +32,47 @@ public class Client {
             output = new PrintWriter(
                     socket.getOutputStream(), true);
 
-            Scanner scanner = new Scanner(System.in);
-
-            System.out.println(input.readLine());
-            System.out.print(input.readLine() + " ");
-            String username = scanner.nextLine();
-            output.println(username);
-            startListening();
-            while (true) {
-                String message = scanner.nextLine();
-                displayOwnMessage(message);
-                output.println(message);
+            // 🔹 Read welcome message
+            if (listener != null) {
+                listener.onMessageReceived(input.readLine());
+                listener.onMessageReceived(input.readLine());
             }
+
+            // 🔹 Send username
+            output.println(username);
+
+            // 🔹 Start listening thread
+            startListening();
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void displayOwnMessage(String message) {
-        System.out.println("[Me]: " + message);
+    //  Send message (called from UI)
+    public void sendMessage(String message) {
+        if (output != null) {
+            output.println(message);
+        }
     }
 
-
+    // Listen to server (background thread)
     private void startListening() {
         new Thread(() -> {
             try {
                 String response;
                 while ((response = input.readLine()) != null) {
-                    displayIncomingMessage(response);
+
+                    //  Send message to UI
+                    if (listener != null) {
+                        listener.onMessageReceived(response);
+                    }
                 }
             } catch (Exception e) {
-                System.out.println("Disconnected from server.");
+                if (listener != null) {
+                    listener.onMessageReceived("[SYSTEM]: Disconnected from server.");
+                }
             }
         }).start();
-    }
-
-    private void displayIncomingMessage(String message) {
-        System.out.println(message);
     }
 }
