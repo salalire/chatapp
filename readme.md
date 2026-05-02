@@ -121,6 +121,37 @@ Abel: Hi Samuel
 
 ---
 
+## 🎨 UI Upgrade (JavaFX Chat Bubbles)
+
+The application now includes a modern chat interface similar to messaging apps like WhatsApp and Telegram.
+
+### ✨ Features Added
+
+* 💬 Message bubbles (left/right alignment)
+* 🎨 Different colors for sender and receiver
+* 📜 Scrollable chat window
+* ⚡ Real-time UI updates using JavaFX threads
+
+### 🧠 How It Works
+
+* Messages are displayed using `VBox` instead of `TextArea`
+* Each message is wrapped inside a styled `Label`
+* Messages are aligned:
+
+    * Right → current user
+    * Left → other users
+* UI updates are handled safely using `Platform.runLater()`
+
+### 🧩 Key Components
+
+* `VBox` → holds chat messages
+* `HBox` → controls alignment
+* `Label` → message content
+* `ScrollPane` → scrolling support
+
+---
+
+
 ## 🧑‍💻 Author
 
 * Samuel Lire
@@ -133,6 +164,9 @@ This project is built for learning purposes to understand how real-time communic
 
 ---
 
+
 ## ⭐ If you like this project
+
+
 
 Give it a ⭐ on GitHub and feel free to improve it!
