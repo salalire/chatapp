@@ -1,26 +1,37 @@
 package serverClient;
+
 import java.io.*;
 import java.net.Socket;
 
 public class ClientHandler implements Runnable {
+
     private Socket socket;
     private PrintWriter out;
     private String userName;
-    public ClientHandler(Socket socket){
-        this.socket=socket;
+
+
+    public ClientHandler(Socket socket) {
+        this.socket = socket;
     }
 
-
-    private void broadcast(String message){
-        for(ClientHandler client:Server.clients){
-            if(client!=this&client.out!=null){
+    private void sendToUser(String target, String message) {
+        for (ClientHandler client : Server.clients) {
+            if (client.userName.equals(target)) {
                 client.out.println(message);
+                return;
             }
-
-
         }
     }
 
+
+
+    private void broadcast(String message) {
+        for (ClientHandler client : Server.clients) {
+            if (client != this && client.out != null) {
+                client.out.println(message);
+            }
+        }
+    }
 
     public void run() {
         try {
@@ -30,38 +41,52 @@ public class ClientHandler implements Runnable {
             out = new PrintWriter(socket.getOutputStream(), true);
 
             out.println("Welcome To Chat!");
-            out.println("Enter Username:");
 
-            userName = in.readLine();
+            // 🔹 read username
+            String firstLine = in.readLine();
 
-            System.out.println("[SERVER] " + userName + " joined");
+            if (firstLine != null && firstLine.startsWith("USERNAME:")) {
+                userName = firstLine.substring(9);
+            } else {
+                socket.close();
+                return;
+            }
 
-            //  notify others
+            System.out.println(userName + " joined");
+
             broadcast("[SERVER]: " + userName + " joined");
 
             String message;
 
             while ((message = in.readLine()) != null) {
-                System.out.println(userName + ": " + message);
 
-                broadcast(userName + ": " + message);
+                if (message.startsWith("MSG:")) {
+                    String realMsg = message.substring(4);
+                    broadcast(userName + ": " + realMsg);
+                }
+
+                else if (message.startsWith("PRIVATE:")) {
+
+                    String[] parts = message.split(":", 3);
+
+                    String targetUser = parts[1];
+                    String privateMsg = parts[2];
+
+                    sendToUser(targetUser, "[PRIVATE] " + userName + ": " + privateMsg);
+                }
             }
 
         } catch (Exception e) {
-            System.out.println("[ERROR] Connection issue with " + userName);
+            System.out.println("Error with " + userName);
         } finally {
             try {
-                //  remove client
                 Server.clients.remove(this);
 
-
                 if (userName != null) {
-                    System.out.println("[SERVER] " + userName + " left");
                     broadcast("[SERVER]: " + userName + " left");
                 }
 
                 socket.close();
-
             } catch (Exception e) {
                 e.printStackTrace();
             }

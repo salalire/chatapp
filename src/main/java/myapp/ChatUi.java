@@ -15,110 +15,109 @@ public class ChatUi extends Application {
     private ScrollPane scrollPane;
     private String username;
     private VBox chatBox;
-    private HBox createMessageBubble(String message,boolean isMe){
-        Label label=new Label(message);
+    private ComboBox<String> userSelector;
+
+    private HBox createMessageBubble(String message, boolean isMe) {
+
+        Label label = new Label(message);
         label.setWrapText(true);
-        label.setMaxSize(250,250);
-        //bubble style
-        if(isMe){
-            label.setStyle("-fx-background-color: #0084ff; "+
-                    "-fx-text-fill:white; "+
-                    "-fx-padding: 8; "+
-                    "-fx-background-radius: 10");
+        label.setMaxWidth(250);
+
+        if (isMe) {
+            label.setStyle("-fx-background-color:#0084ff; -fx-text-fill:white; -fx-padding:8; -fx-background-radius:10;");
+        } else {
+            label.setStyle("-fx-background-color:#e4e6eb; -fx-text-fill:black; -fx-padding:8; -fx-background-radius:10;");
         }
-        else {
-            label.setStyle("-fx-background-color: #e4e6eb; "+
-                    "-fx-text-fill:blue; "+
-                    "-fx-padding: 8; "+
-                    "-fx-background-radius: 10");
+
+        HBox box = new HBox(label);
+
+        if (isMe) {
+            box.setStyle("-fx-alignment: center-right;");
+        } else {
+            box.setStyle("-fx-alignment: center-left;");
         }
-        HBox box=new HBox(label);
-        //control alignment
-        if(isMe){
-            box.setStyle("-fx-alignment: center-right; ");
-        }
-        else {
-            box.setStyle("-fx-alignment: center-left");
-        }
-       return box;
+
+        return box;
     }
 
     @Override
     public void start(Stage stage) {
 
-        // 🔹 Ask username (popup)
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Login");
-        dialog.setHeaderText("Enter your username:");
-
+        dialog.setHeaderText("Enter username:");
         username = dialog.showAndWait().orElse("User");
 
-        // 🔹 Chat chatbox
-        chatBox=new VBox(10);
-        chatBox.setStyle("-fx-paddind:10; ");
-         scrollPane=new ScrollPane(chatBox);
-        scrollPane.setFitToHeight(true);
+        userSelector = new ComboBox<>();
+        userSelector.setPromptText("Select User");
+        userSelector.getItems().addAll("A", "B", "C");
 
-        // 🔹 Input field
+        chatBox = new VBox(10);
+        chatBox.setStyle("-fx-padding:10;");
+
+        scrollPane = new ScrollPane(chatBox);
+        scrollPane.setFitToWidth(true);
+
         textField = new TextField();
-        textField.setPromptText("Type your message...");
+        textField.setPromptText("Type message...");
 
-        // 🔹 Send button
         Button send = new Button("Send");
 
-        // 🔹 Layout
-        HBox inputBox = new HBox(10, textField, send);
-        VBox root = new VBox(10, chatBox, inputBox);
+        HBox inputBox = new HBox(10,userSelector, textField, send);
+        VBox root = new VBox(10, scrollPane, inputBox);
 
-        // 🔹 Actions when the send is clicked
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+
         send.setOnAction(e -> sendMessage());
         textField.setOnAction(e -> sendMessage());
 
-        // 🔹 Scene
         stage.setScene(new Scene(root, 500, 600));
-        stage.setTitle("Chat App - " + username);
+        stage.setTitle("Chat - " + username);
         stage.show();
 
-        //  Connect AFTER UI loads
         connectToServer();
     }
 
-    //  Send message
     private void sendMessage() {
         String message = textField.getText();
 
         if (!message.isEmpty()) {
 
+            // show locally
             chatBox.getChildren().add(
-                    createMessageBubble("[Me: ]"+message,true)
+                    createMessageBubble(username + ": " + message, true)
             );
-            //auto scroll
+
             scrollPane.setVvalue(1.0);
-            // send to server
-            if (client != null) {
-                client.sendMessage(message);
+
+            String target = userSelector.getValue();
+
+            if (target != null) {
+                client.sendPrivateMessage(target, message);
+            } else {
+                client.sendMessage(message); // fallback to public
             }
 
-            // clear input
             textField.clear();
         }
     }
 
-    //  Connect to server
     private void connectToServer() {
 
         client = new Client();
 
-        //  receive messages from server
         client.setMessageListener(message -> {
             Platform.runLater(() -> {
-                boolean isMe=message.startsWith(username+": ");
-                chatBox.getChildren().add(createMessageBubble(message,isMe));
+
+                boolean isMe = message.startsWith(username + ":");
+
+                chatBox.getChildren().add(
+                        createMessageBubble(message, isMe)
+                );
+
                 scrollPane.setVvalue(1.0);
             });
         });
 
-        //  pass username
         new Thread(() -> client.startClient(username)).start();
     }
 
