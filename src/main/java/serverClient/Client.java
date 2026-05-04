@@ -66,7 +66,18 @@ public class Client {
                 String response;
                 while ((response = input.readLine()) != null) {
 
-                    // 🚨 CLEAN HERE (NOT UI)
+
+                    if (response.startsWith("USERLIST:")) {
+
+                        String users = response.substring(9);
+
+                        if (listener != null) {
+                            listener.onMessageReceived("USERLIST:" + users);
+                        }
+
+                        continue;
+                    }
+
                     String cleanMessage = response;
 
                     // remove protocol if any future use

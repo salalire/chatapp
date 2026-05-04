@@ -9,6 +9,29 @@ public class ClientHandler implements Runnable {
     private PrintWriter out;
     private String userName;
 
+    private void sendUserList() {
+        StringBuilder user = new StringBuilder("USERLIST:");
+
+        for (ClientHandler client : Server.clients) {
+            if (client.userName != null) {
+                user.append(client.userName).append(",");
+            }
+        }
+
+        if (user.charAt(user.length() - 1) == ',') {
+            user.deleteCharAt(user.length() - 1);
+        }
+
+        String userListMessage = user.toString();
+
+        for (ClientHandler client : Server.clients) {
+            if (client.out != null) {
+                client.out.println(userListMessage);
+            }
+        }
+    }
+
+
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
@@ -55,6 +78,7 @@ public class ClientHandler implements Runnable {
             System.out.println(userName + " joined");
 
             broadcast("[SERVER]: " + userName + " joined");
+            sendUserList();
 
             String message;
 
@@ -84,6 +108,7 @@ public class ClientHandler implements Runnable {
 
                 if (userName != null) {
                     broadcast("[SERVER]: " + userName + " left");
+                   sendUserList();
                 }
 
                 socket.close();

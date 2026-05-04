@@ -49,7 +49,7 @@ public class ChatUi extends Application {
 
         userSelector = new ComboBox<>();
         userSelector.setPromptText("Select User");
-        userSelector.getItems().addAll("A", "B", "C");
+//        userSelector.getItems().addAll("A", "B", "C");
 
         chatBox = new VBox(10);
         chatBox.setStyle("-fx-padding:10;");
@@ -107,6 +107,23 @@ public class ChatUi extends Application {
 
         client.setMessageListener(message -> {
             Platform.runLater(() -> {
+
+                //  HANDLE USER LIST
+                if (message.startsWith("USERLIST:")) {
+
+                    String users = message.substring(9);
+                    String[] userArray = users.split(",");
+
+                    userSelector.getItems().clear();
+
+                    for (String user : userArray) {
+                        if (!user.equals(username) && !user.isEmpty()) {
+                            userSelector.getItems().add(user);
+                        }
+                    }
+
+                    return;
+                }
 
                 boolean isMe = message.startsWith(username + ":");
 
