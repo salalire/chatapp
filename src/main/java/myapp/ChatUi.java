@@ -11,12 +11,16 @@ import serverClient.Client;
 public class ChatUi extends Application {
 
     private Client client;
-    private TextField textField;
-    private ScrollPane scrollPane;
-    private String username;
-    private VBox chatBox;
-    private ComboBox<String> userSelector;
 
+    private TextField textField;
+    private VBox chatBox;
+    private ScrollPane scrollPane;
+
+    private ListView<String> userListView; // 🔥 NEW
+    private String username;
+    private String selectedUser; // 🔥 track selected user
+
+    // 🔹 Create chat bubble
     private HBox createMessageBubble(String message, boolean isMe) {
 
         Label label = new Label(message);
@@ -43,14 +47,22 @@ public class ChatUi extends Application {
     @Override
     public void start(Stage stage) {
 
+        // 🔹 Username popup
         TextInputDialog dialog = new TextInputDialog();
         dialog.setHeaderText("Enter username:");
         username = dialog.showAndWait().orElse("User");
 
-        userSelector = new ComboBox<>();
-        userSelector.setPromptText("Select User");
-//        userSelector.getItems().addAll("A", "B", "C");
+        // 🔹 LEFT SIDE → USERS LIST
+        userListView = new ListView<>();
+        userListView.setPrefWidth(150);
 
+        // when user clicks someone
+        userListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            selectedUser = newVal;
+            System.out.println("Selected: " + selectedUser);
+        });
+
+        // 🔹 RIGHT SIDE → CHAT
         chatBox = new VBox(10);
         chatBox.setStyle("-fx-padding:10;");
 
@@ -62,45 +74,51 @@ public class ChatUi extends Application {
 
         Button send = new Button("Send");
 
-        HBox inputBox = new HBox(10,userSelector, textField, send);
-        VBox root = new VBox(10, scrollPane, inputBox);
-
+        HBox inputBox = new HBox(10, textField, send);
+        VBox chatArea = new VBox(10, scrollPane, inputBox);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
+        // 🔥 MAIN LAYOUT (SplitPane)
+        SplitPane root = new SplitPane();
+        root.getItems().addAll(userListView, chatArea);
+        root.setDividerPositions(0.3);
+
+        // 🔹 actions
         send.setOnAction(e -> sendMessage());
         textField.setOnAction(e -> sendMessage());
 
-        stage.setScene(new Scene(root, 500, 600));
+        stage.setScene(new Scene(root, 700, 600));
         stage.setTitle("Chat - " + username);
         stage.show();
 
         connectToServer();
     }
 
+    // 🔹 Send message
     private void sendMessage() {
         String message = textField.getText();
 
         if (!message.isEmpty()) {
 
-            // show locally
             chatBox.getChildren().add(
                     createMessageBubble(username + ": " + message, true)
             );
 
             scrollPane.setVvalue(1.0);
 
-            String target = userSelector.getValue();
-
-            if (target != null) {
-                client.sendPrivateMessage(target, message);
-            } else {
-                client.sendMessage(message); // fallback to public
+            if (client != null) {
+                if (selectedUser != null) {
+                    client.sendPrivateMessage(selectedUser, message);
+                } else {
+                    client.sendMessage(message);
+                }
             }
 
             textField.clear();
         }
     }
 
+    // 🔹 Connect to server
     private void connectToServer() {
 
         client = new Client();
@@ -108,17 +126,17 @@ public class ChatUi extends Application {
         client.setMessageListener(message -> {
             Platform.runLater(() -> {
 
-                //  HANDLE USER LIST
+                // 🔥 HANDLE USER LIST
                 if (message.startsWith("USERLIST:")) {
 
                     String users = message.substring(9);
                     String[] userArray = users.split(",");
 
-                    userSelector.getItems().clear();
+                    userListView.getItems().clear();
 
                     for (String user : userArray) {
                         if (!user.equals(username) && !user.isEmpty()) {
-                            userSelector.getItems().add(user);
+                            userListView.getItems().add(user);
                         }
                     }
 
